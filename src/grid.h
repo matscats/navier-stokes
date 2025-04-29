@@ -5,6 +5,7 @@
 typedef struct Grid Grid;
 typedef struct GridInterface GridInterface;
 typedef size_t grid_size;
+typedef size_t position;
 typedef float grid_spacing;
 
 struct GridInterface

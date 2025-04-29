@@ -5,7 +5,6 @@
 typedef struct Velocity Velocity;
 typedef struct VelocityInterface VelocityInterface;
 typedef float field;
-typedef size_t position;
 
 struct VelocityInterface
 {
