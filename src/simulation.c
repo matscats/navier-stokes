@@ -19,35 +19,33 @@ static inline double viscous_term(field **f, position xi, position yi, grid_spac
   return laplacian_x(f, xi, yi, dx2) + laplacian_y(f, xi, yi, dy2);
 }
 
-static void step_simulation(
+void run_simulation_step(
     const Grid *grid,
     Velocity *current,
     Velocity *next,
-    const SimulationParams *params)
+    float viscosity,
+    float dt)
 {
-  grid_size nx = IGrid.get_nx(grid);
-  grid_size ny = IGrid.get_ny(grid);
-  grid_spacing dx = IGrid.get_dx(grid);
-  grid_spacing dy = IGrid.get_dy(grid);
+  grid_size nx = grid->vtable->get_nx(grid);
+  grid_size ny = grid->vtable->get_ny(grid);
 
-  float dt = params->dt;
-  float nu = params->viscosity;
-
+  grid_spacing dx = grid->vtable->get_dx(grid);
+  grid_spacing dy = grid->vtable->get_dy(grid);
   grid_spacing dx2 = dx * dx;
   grid_spacing dy2 = dy * dy;
 
-  field **u_curr = IVelocity.get_u(current);
-  field **v_curr = IVelocity.get_v(current);
-  field **u_next = IVelocity.get_u(next);
-  field **v_next = IVelocity.get_v(next);
+  field **u_curr = current->vtable->get_u(current);
+  field **v_curr = current->vtable->get_v(current);
+  field **u_next = next->vtable->get_u(next);
+  field **v_next = next->vtable->get_v(next);
 
 #pragma omp parallel for collapse(2) schedule(static)
   for (grid_size xi = 1; xi < nx - 1; ++xi)
   {
     for (grid_size yi = 1; yi < ny - 1; ++yi)
     {
-      u_next[xi][yi] = u_curr[xi][yi] + dt * nu * viscous_term(u_curr, xi, yi, dx2, dy2);
-      v_next[xi][yi] = v_curr[xi][yi] + dt * nu * viscous_term(v_curr, xi, yi, dx2, dy2);
+      u_next[xi][yi] = u_curr[xi][yi] + dt * viscosity * viscous_term(u_curr, xi, yi, dx2, dy2);
+      v_next[xi][yi] = v_curr[xi][yi] + dt * viscosity * viscous_term(v_curr, xi, yi, dx2, dy2);
     }
   }
 
@@ -63,7 +61,3 @@ static void step_simulation(
     v_next[0][yi] = v_next[nx - 1][yi] = 0.0;
   }
 }
-
-const SimulationInterface ISimulation = {
-    .step = step_simulation,
-};

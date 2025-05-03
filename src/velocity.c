@@ -3,13 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct Velocity
-{
-  field **u;
-  field **v;
-  grid_size nx, ny;
-};
-
 static field **alloc_2d_array(grid_size nx, grid_size ny)
 {
   field **array = (field **)malloc(nx * sizeof(field *));
@@ -40,29 +33,6 @@ static void free_2d_array(field **array)
     free(array[0]);
     free(array);
   }
-}
-
-static Velocity *velocity_create(grid_size nx, grid_size ny)
-{
-  Velocity *v = (Velocity *)malloc(sizeof(Velocity));
-
-  if (!v)
-  {
-    return NULL;
-  }
-
-  v->nx = nx;
-  v->ny = ny;
-  v->u = alloc_2d_array(nx, ny);
-  v->v = alloc_2d_array(nx, ny);
-
-  if (!v->u || !v->v)
-  {
-    IVelocity.destroy(v);
-    return NULL;
-  }
-
-  return v;
 }
 
 static void velocity_destroy(Velocity *v)
@@ -116,8 +86,7 @@ static field **velocity_get_v(Velocity *v)
   return v->v;
 }
 
-const VelocityInterface IVelocity = {
-    .create = velocity_create,
+static const VelocityVTable vtable = {
     .destroy = velocity_destroy,
     .initialize = velocity_initialize,
     .add_perturbation = velocity_add_perturbation,
@@ -125,3 +94,27 @@ const VelocityInterface IVelocity = {
     .get_u = velocity_get_u,
     .get_v = velocity_get_v,
 };
+
+Velocity *velocity_create(grid_size nx, grid_size ny)
+{
+  Velocity *v = (Velocity *)malloc(sizeof(Velocity));
+  v->vtable = &vtable;
+
+  if (!v)
+  {
+    return NULL;
+  }
+
+  v->nx = nx;
+  v->ny = ny;
+  v->u = alloc_2d_array(nx, ny);
+  v->v = alloc_2d_array(nx, ny);
+
+  if (!v->u || !v->v)
+  {
+    v->vtable->destroy(v);
+    return NULL;
+  }
+
+  return v;
+}

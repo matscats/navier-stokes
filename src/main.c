@@ -17,44 +17,41 @@ int main(void)
   const double viscosity = 0.1;
 
   // --- Inicialização ---
-  Grid *grid = IGrid.create(nx, ny, dx, dy);
-  Velocity *v1 = IVelocity.create(nx, ny);
-  Velocity *v2 = IVelocity.create(nx, ny);
+  Grid *grid = grid_create(nx, ny, dx, dy);
+  Velocity *v1 = velocity_create(nx, ny);
+  Velocity *v2 = velocity_create(nx, ny);
   Velocity *current = v1;
   Velocity *next = v2;
+  FileHandler *file_handler = file_handler_create();
 
   // --- Perturbação inicial no centro ---
-  field **u = IVelocity.get_u(current);
-  field **v = IVelocity.get_v(current);
+  field **u = current->vtable->get_u(current);
+  field **v = current->vtable->get_v(current);
 
   position cx = nx / 2;
   position cy = ny / 2;
+
   u[cx][cy] = 100.0;
   v[cx][cy] = 0.0;
-
-  SimulationParams params = {
-      .dt = dt,
-      .viscosity = viscosity,
-  };
 
   for (int t = 0; t <= steps; ++t)
   {
     if (t % output_interval == 0)
     {
       printf("Step %d\n", t);
-      IFileHandler.save_velocity("vel", current, nx, ny, t);
+      file_handler->vtable->save_velocity("vel", current, t);
     }
 
-    ISimulation.step(grid, current, next, &params);
+    run_simulation_step(grid, current, next, viscosity, dt);
 
     Velocity *temp = current;
     current = next;
     next = temp;
   }
 
-  IVelocity.destroy(v1);
-  IVelocity.destroy(v2);
-  IGrid.destroy(grid);
+  v1->vtable->destroy(v1);
+  v2->vtable->destroy(v2);
+  grid->vtable->destroy(grid);
 
   return 0;
 }

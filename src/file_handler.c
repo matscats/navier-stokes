@@ -40,10 +40,12 @@ static int save_field_binary(const char *base_name, const char *component, field
   return 0;
 }
 
-static int save_velocity_bin(const char *base_name, const Velocity *v, int nx, int ny, int step)
+static int save_velocity_bin(const char *base_name, const Velocity *v, size_t step)
 {
-  field **_u = IVelocity.get_u((Velocity *)v);
-  field **_v = IVelocity.get_v((Velocity *)v);
+  field **_u = v->vtable->get_u((Velocity *)v);
+  field **_v = v->vtable->get_v((Velocity *)v);
+  grid_size nx = v->nx;
+  grid_size ny = v->ny;
 
   int res1 = save_field_binary(base_name, "u", _u, nx, ny, step);
   int res2 = save_field_binary(base_name, "v", _v, nx, ny, step);
@@ -51,6 +53,14 @@ static int save_velocity_bin(const char *base_name, const Velocity *v, int nx, i
   return (res1 == 0 && res2 == 0) ? 0 : -1;
 }
 
-const FileHandlerInterface IFileHandler = {
+static const FileHandlerVTable vtable = {
     .save_velocity = save_velocity_bin,
 };
+
+FileHandler *file_handler_create(void)
+{
+  FileHandler *file_hander = (FileHandler *)malloc(sizeof(FileHandler));
+  file_hander->vtable = &vtable;
+
+  return file_hander;
+}

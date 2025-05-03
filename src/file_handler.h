@@ -2,11 +2,17 @@
 
 #include "velocity.h"
 
-typedef struct FileHandlerInterface FileHandlerInterface;
+typedef struct FileHandlerVTable FileHandlerVTable;
+typedef struct FileHandler FileHandler;
 
-struct FileHandlerInterface
+struct FileHandlerVTable
 {
-  int (*save_velocity)(const char *base_name, const Velocity *v, int nx, int ny, int step);
+  int (*save_velocity)(const char *base_name, const Velocity *v, size_t step);
 };
 
-extern const FileHandlerInterface IFileHandler;
+struct FileHandler
+{
+  const FileHandlerVTable *vtable;
+};
+
+extern FileHandler *file_handler_create(void);

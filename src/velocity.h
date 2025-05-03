@@ -3,12 +3,11 @@
 #include "grid.h"
 
 typedef struct Velocity Velocity;
-typedef struct VelocityInterface VelocityInterface;
+typedef struct VelocityVTable VelocityVTable;
 typedef float field;
 
-struct VelocityInterface
+struct VelocityVTable
 {
-  Velocity *(*create)(grid_size nx, grid_size ny);
   void (*destroy)(Velocity *v);
   void (*initialize)(Velocity *v, float value);
   void (*add_perturbation)(Velocity *v, position xi, position yi, field du, field dv);
@@ -17,4 +16,12 @@ struct VelocityInterface
   field **(*get_v)(Velocity *v);
 };
 
-extern const VelocityInterface IVelocity;
+struct Velocity
+{
+  const VelocityVTable *vtable;
+  field **u;
+  field **v;
+  grid_size nx, ny;
+};
+
+extern Velocity *velocity_create(grid_size nx, grid_size ny);
